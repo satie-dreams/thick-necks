@@ -155,6 +155,13 @@ main(void)
     }
   }
 
+  strcpy(buf, "mp_test");
+
+  if(fork1() == 0)
+    runcmd(parsecmd(buf));
+
+  wait();
+
   // Read and run input commands.
   while(getcmd(buf, sizeof(buf)) >= 0){
     if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
