@@ -1,7 +1,6 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include "user.h"
 
 __attribute__ ((noinline)) int dribble(int ncount) {
   float neg, a1, a2, a3, a4;
@@ -77,24 +76,57 @@ int withprocesses(int ntasks) {
   return out;
 }
 
+int withthreads(int ntasks) {
+  int out = 0;
+
+  int pid = thinfork();
+  if (pid == 0) {
+    out = 1;
+    exit();
+  } else if (pid == -1) {
+    printf(1, "unsurprising news\n");
+    exit();
+  } else {
+    thinwait();
+  }
+
+  return out;
+}
+
+
 int main() {
   int starttime, duration;
   int ntasks = 2;
-  printf(1, "-- Sequential :(\n");
 
-  starttime = uptime();
-  int seq_out = sequential(ntasks);
-  duration = uptime() - starttime;
+  {
+    printf(1, "-- With threading :)\n");
 
-  printf(1, "result = %d in %d time units\r\n", seq_out, duration);
+    starttime = uptime();
+    int threaded_out = withthreads(ntasks);
+    duration = uptime() - starttime;
 
-  printf(1, "-- With multiprocessing :)\n");
+    printf(1, "result = %d in %d time units\r\n", threaded_out, duration);
+  }
 
-  starttime = uptime();
-  int multi_out = withprocesses(ntasks);
-  duration = uptime() - starttime;
+  {
+    printf(1, "-- With multiprocessing :)\n");
 
-  printf(1, "result = %d in %d time units\r\n", multi_out, duration);
+    starttime = uptime();
+    int multi_out = withprocesses(ntasks);
+    duration = uptime() - starttime;
+
+    printf(1, "result = %d in %d time units\r\n", multi_out, duration);
+  }
+
+  {
+    printf(1, "-- Sequential :(\n");
+
+    starttime = uptime();
+    int seq_out = sequential(ntasks);
+    duration = uptime() - starttime;
+
+    printf(1, "result = %d in %d time units\r\n", seq_out, duration);
+  }
 
   exit();
 }

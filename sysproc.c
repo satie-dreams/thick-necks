@@ -7,6 +7,19 @@
 #include "mmu.h"
 #include "proc.h"
 
+
+int
+sys_thinfork(void)
+{
+  return thinfork();
+}
+
+int
+sys_thinwait(void)
+{
+  return thinwait();
+}
+
 int
 sys_fork(void)
 {

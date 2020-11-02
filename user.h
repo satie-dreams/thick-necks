@@ -23,6 +23,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int thinfork(void);
+int thinwait(void);
 
 // ulib.c
 int stat(const char*, struct stat*);
