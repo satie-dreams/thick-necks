@@ -1,6 +1,7 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
+#include "thread.h"
 
 __attribute__ ((noinline)) int dribble(int ncount) {
   float neg, a1, a2, a3, a4;
@@ -22,11 +23,20 @@ __attribute__ ((noinline)) int dribble(int ncount) {
 }
 
 void task(int idx, int fdwrite) {
-  printf(1, "writing from %d\r\n", idx);
+//  printf(1, "writing from %d\r\n", idx);
 
   int out = dribble(1e7);
 
   write(fdwrite, &out, 1);
+}
+
+void *thread_task(int* out) {
+//  printf(1, "writing from %d\r\n", *out);
+
+  int out_ = dribble(1e7);
+
+  *out = out_;
+  exit();
 }
 
 int sequential(int ntasks) {
@@ -77,20 +87,22 @@ int withprocesses(int ntasks) {
 }
 
 int withthreads(int ntasks) {
-  int out = 0;
-
-  int pid = thinfork();
-  if (pid == 0) {
-    out = 1;
-    exit();
-  } else if (pid == -1) {
-    printf(1, "unsurprising news\n");
-    exit();
-  } else {
-    thinwait();
+  Thread** threads = (Thread**) malloc(sizeof(Thread*) * ntasks);
+  int* out = (int*) malloc((sizeof(int)) * ntasks);
+  for (int i = 0; i < ntasks; ++i) {
+    threads[i] = thread_create(thread_task, &out[i]);
   }
 
-  return out;
+  for (int i = 0; i < ntasks; ++i) {
+    thread_join(threads[i]);
+  }
+  int res = 0;
+
+  for (int i = 0; i < ntasks; ++i) {
+    res += out[i];
+  }
+
+  return res;
 }
 
 

@@ -1,6 +1,11 @@
 struct stat;
 struct rtcdate;
 
+#define STDIN    0
+#define STDOUT   1
+#define STDERR   2
+
+
 // system calls
 int fork(void);
 int exit(void) __attribute__((noreturn));
@@ -23,8 +28,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int thinfork(void);
-int thinwait(void);
+int clone(void*, void*, void*);
+int join(int);
 
 // ulib.c
 int stat(const char*, struct stat*);

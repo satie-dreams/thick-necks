@@ -533,64 +533,77 @@ procdump(void)
   }
 }
 
-int thinfork(void)
+int
+clone(void* function, void* arg, void *stack)
 {
   int i, pid;
   struct proc *np;
-  struct proc *curproc = myproc();
+  struct proc *proc = myproc();
 
   // Allocate process.
-  if((np = allocproc()) == 0){
+  if((np = allocproc()) == 0)
     return -1;
+
+  np->sz = proc->sz;
+  // if the process calling clone is itself a thread,
+  // copy its parent to the new thread
+  if (proc->isthread == 0) {
+    np->parent = proc;
   }
-
-  // Copy process state from proc.
-  // np->pgdir = curproc->pgdir;
-
-  if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
-    kfree(np->kstack);
-    np->kstack = 0;
-    np->state = UNUSED;
-    return -1;
+  else {
+    np->parent = proc->parent;
   }
-
-  np->sz = curproc->sz;
-  np->parent = curproc;
-  *np->tf = *curproc->tf;
+  *np->tf = *proc->tf;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 
-  for(i = 0; i < NOFILE; i++)
-    if(curproc->ofile[i])
-      np->ofile[i] = filedup(curproc->ofile[i]);
-  np->cwd = idup(curproc->cwd);
+  // reallocate old process's page table to new process
+  np->pgdir = proc->pgdir;
+  // modified the return ip to thread function
+  np->tf->eip = (int)function;
+  // modified the thread indicator's value
+  np->isthread = 1;
+  // modified the stack
+  np->stack = (int)stack;
+  np->tf->esp = (int)stack + 4092; // move esp to the top of the new stack
+  *((int *)(np->tf->esp)) = (int) arg; // push the argument
 
-  safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+  *((int *)(np->tf->esp - 4)) = 0xFFFFFFFF; // push the return address
+  np->tf->esp -= 4;
+
+//  np->ofile = proc->ofile;
+  for(i = 0; i < NOFILE; i++)
+    if(proc->ofile[i])
+      np->ofile[i] = filedup(proc->ofile[i]);
+  np->cwd = idup(proc->cwd);
+
+  safestrcpy(np->name, proc->name, sizeof(proc->name));
 
   pid = np->pid;
 
+  // lock to force the compiler to emit the np->state write last.
   acquire(&ptable.lock);
-
   np->state = RUNNABLE;
-
   release(&ptable.lock);
 
   return pid;
 }
 
-int thinwait(void)
+int
+join(int pid)
 {
   struct proc *p;
-  int havekids, pid;
-  struct proc *curproc = myproc();
+  int havekids;
+  struct proc *proc = myproc();
 
   acquire(&ptable.lock);
   for(;;){
-    // Scan through table looking for exited children.
+    // Scan through table looking for zombie children.
     havekids = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->parent != curproc)
+      // only wait for the child thread, but not the child process
+      if(p->parent != proc || p->isthread != 1 || p->pid != pid)
         continue;
       havekids = 1;
       if(p->state == ZOMBIE){
@@ -598,24 +611,23 @@ int thinwait(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        freevm(p->pgdir);
+        p->state = UNUSED;
         p->pid = 0;
         p->parent = 0;
         p->name[0] = 0;
         p->killed = 0;
-        p->state = UNUSED;
         release(&ptable.lock);
         return pid;
       }
     }
 
-    // No point waiting if we don't have any children.
-    if(!havekids || curproc->killed){
+    // No point waiting if we don't have any children thread.
+    if(!havekids || proc->killed){
       release(&ptable.lock);
       return -1;
     }
 
     // Wait for children to exit.  (See wakeup1 call in proc_exit.)
-    sleep(curproc, &ptable.lock);  //DOC: wait-sleep
+    sleep(proc, &ptable.lock);  //DOC: wait-sleep
   }
 }
