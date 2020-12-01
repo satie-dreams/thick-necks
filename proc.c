@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "defs.h"
 
 struct {
   struct spinlock lock;
@@ -112,6 +113,10 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  // set affinity to all CPUs
+  CPU_ALL(&p->cpu_affinity);
+//  p->cpu_affinity = 0b01;
+
   return p;
 }
 
@@ -141,6 +146,9 @@ userinit(void)
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
+
+  // set affinity to all CPUs
+  CPU_ALL(&p->cpu_affinity);
 
   // this assignment to p->state lets other cores
   // run this process. the acquire forces the above
@@ -324,6 +332,7 @@ scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
+  int my_cpuid = cpuid();
   c->proc = 0;
 
   for(;;){
@@ -336,6 +345,11 @@ scheduler(void)
       if(p->state != RUNNABLE)
         continue;
 
+      // check whether this process can be handled by this CPU
+      if (CPU_ISSET(my_cpuid, &p->cpu_affinity) == 0)
+        continue;
+
+//      cprintf("CPU: %d, process: %d\n", my_cpuid, p->pid);
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -630,4 +644,14 @@ join(int pid)
     // Wait for children to exit.  (See wakeup1 call in proc_exit.)
     sleep(proc, &ptable.lock);  //DOC: wait-sleep
   }
+}
+
+int sched_setaffinity(const void *cpu_set) {
+  myproc()->cpu_affinity = *((cpu_set_t*) cpu_set);
+  return 0;
+}
+
+int sched_getaffinity(void *cpu_set) {
+  *((cpu_set_t*) cpu_set) = myproc()->cpu_affinity;
+  return 0;
 }

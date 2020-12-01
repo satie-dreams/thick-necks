@@ -1,3 +1,5 @@
+#include "cpu_affinity.h"
+
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -52,6 +54,7 @@ struct proc {
   char name[16];               // Process name (debugging)
   int isthread;                // Is thread or not
   int stack;                   // thread's stack address
+  cpu_set_t cpu_affinity;     // Set of CPUs which can handle this process
 };
 
 // Process memory is laid out contiguously, low addresses first:

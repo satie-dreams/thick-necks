@@ -30,6 +30,8 @@ int sleep(int);
 int uptime(void);
 int clone(void*, void*, void*);
 int join(int);
+int sched_setaffinity(void*);
+int sched_getaffinity(void*);
 
 // ulib.c
 int stat(const char*, struct stat*);

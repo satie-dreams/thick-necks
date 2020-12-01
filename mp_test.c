@@ -2,6 +2,7 @@
 #include "stat.h"
 #include "user.h"
 #include "thread.h"
+#include "cpu_affinity.h"
 
 __attribute__ ((noinline)) int dribble(int ncount) {
   float neg, a1, a2, a3, a4;
@@ -37,6 +38,14 @@ void *thread_task(int* out) {
 
   *out = out_;
   exit();
+}
+
+void *thread_task_with_affinity(int* out) {
+  cpu_set_t affinity;
+  CPU_ZERO(&affinity);
+  CPU_SET(0, &affinity);
+  sched_setaffinity(&affinity);
+  return thread_task(out);
 }
 
 int sequential(int ntasks) {
@@ -105,6 +114,25 @@ int withthreads(int ntasks) {
   return res;
 }
 
+int withconcurency(int ntasks) {
+  Thread** threads = (Thread**) malloc(sizeof(Thread*) * ntasks);
+  int* out = (int*) malloc((sizeof(int)) * ntasks);
+  for (int i = 0; i < ntasks; ++i) {
+    threads[i] = thread_create(thread_task_with_affinity, &out[i]);
+  }
+
+  for (int i = 0; i < ntasks; ++i) {
+    thread_join(threads[i]);
+  }
+  int res = 0;
+
+  for (int i = 0; i < ntasks; ++i) {
+    res += out[i];
+  }
+
+  return res;
+}
+
 
 int main() {
   int starttime, duration;
@@ -115,6 +143,16 @@ int main() {
 
     starttime = uptime();
     int threaded_out = withthreads(ntasks);
+    duration = uptime() - starttime;
+
+    printf(1, "result = %d in %d time units\r\n", threaded_out, duration);
+  }
+
+  {
+    printf(1, "-- With concurrency on 1 CPU :)\n");
+
+    starttime = uptime();
+    int threaded_out = withconcurency(ntasks);
     duration = uptime() - starttime;
 
     printf(1, "result = %d in %d time units\r\n", threaded_out, duration);

@@ -31,6 +31,24 @@ sys_join(void)
 }
 
 int
+sys_sched_setaffinity(void)
+{
+  int cpu_set;
+  if(argint(0, &cpu_set) < 0)
+    return -1;
+  return sched_setaffinity((void*)cpu_set);
+}
+
+int
+sys_sched_getaffinity(void)
+{
+  int cpu_set;
+  if(argint(0, &cpu_set) < 0)
+    return -1;
+  return sched_getaffinity((void*)cpu_set);
+}
+
+int
 sys_fork(void)
 {
   return fork();

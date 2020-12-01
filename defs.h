@@ -122,6 +122,8 @@ void            wakeup(void*);
 void            yield(void);
 int             clone(void* function, void* arg, void *stack);
 int             join(int pid);
+int             sched_setaffinity(const void *mask);
+int             sched_getaffinity(void *mask);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
