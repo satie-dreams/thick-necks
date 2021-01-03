@@ -583,7 +583,7 @@ clone(void* function, void* arg, void *stack)
   np->tf->esp = (int)stack + 4092; // move esp to the top of the new stack
   *((int *)(np->tf->esp)) = (int) arg; // push the argument
 
-  *((int *)(np->tf->esp - 4)) = 0xFFFFFFFF; // push the return address
+  *((int *)(np->tf->esp - 4)) = (int) exit; // push the return address
   np->tf->esp -= 4;
 
 //  np->ofile = proc->ofile;

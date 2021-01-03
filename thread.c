@@ -4,10 +4,10 @@
 #include "thread.h"
 #include "user.h"
 
-Thread *thread_create(void* func, int* fd) {
+Thread *thread_create(void* func, void* arg) {
   Thread *thread = malloc(sizeof(Thread));
-  thread->stack = (void*) malloc(4096);
-  thread->pid = clone(func, fd, thread->stack);
+  thread->stack = (void*) malloc(USTACK_SIZE);
+  thread->pid = clone(func, arg, thread->stack);
   thread->joinable = 1;
   return thread;
 }
@@ -19,6 +19,5 @@ void thread_join(Thread *thread) {
     printf(2, "ERROR: problem while joining thread");
   }
 
-//  printf(1, "Thread was joined\n");
   thread->joinable = 0;
 }
