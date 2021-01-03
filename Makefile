@@ -157,7 +157,7 @@ _forktest: forktest.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest forktest.o ulib.o usys.o
 	$(OBJDUMP) -S _forktest > forktest.asm
 
-_mp_test: mp_test.o thread.o cpu_affinity.o $(ULIB)
+_mp_test: mp_test.o thread.o cpu_affinity.o swtch.o uthread.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
 	$(OBJDUMP) -S $@ > $*.asm
 	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
@@ -189,7 +189,6 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_mp_test\
-	_thread_test\
 
 fs.img: mkfs README.md $(UPROGS)
 	./mkfs fs.img README.md $(UPROGS)

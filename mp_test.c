@@ -3,6 +3,7 @@
 #include "user.h"
 #include "thread.h"
 #include "cpu_affinity.h"
+#include "uthread.h"
 
 __attribute__ ((noinline)) int dribble(int ncount) {
   float neg, a1, a2, a3, a4;
@@ -134,49 +135,71 @@ int withconcurency(int ntasks) {
 }
 
 
+void test(UThreadManager *utm, Task* t, int id) {
+  printf(1, "test is started, thread id = %d\n", id);
+  uthread_yield(utm, t);
+  printf(1, "test is working, thread id = %d\n", id);
+}
+
+
 int main() {
-  int starttime, duration;
-  int ntasks = 2;
+//  int starttime, duration;
+//  int ntasks = 2;
+//
+//  {
+//    printf(1, "-- With threading :)\n");
+//
+//    starttime = uptime();
+//    int threaded_out = withthreads(ntasks);
+//    duration = uptime() - starttime;
+//
+//    printf(1, "result = %d in %d time units\r\n", threaded_out, duration);
+//  }
+//
+//  {
+//    printf(1, "-- With concurrency on 1 CPU :)\n");
+//
+//    starttime = uptime();
+//    int threaded_out = withconcurency(ntasks);
+//    duration = uptime() - starttime;
+//
+//    printf(1, "result = %d in %d time units\r\n", threaded_out, duration);
+//  }
+//
+//  {
+//    printf(1, "-- With multiprocessing :)\n");
+//
+//    starttime = uptime();
+//    int multi_out = withprocesses(ntasks);
+//    duration = uptime() - starttime;
+//
+//    printf(1, "result = %d in %d time units\r\n", multi_out, duration);
+//  }
+//
+//  {
+//    printf(1, "-- Sequential :(\n");
+//
+//    starttime = uptime();
+//    int seq_out = sequential(ntasks);
+//    duration = uptime() - starttime;
+//
+//    printf(1, "result = %d in %d time units\r\n", seq_out, duration);
+//  }
 
-  {
-    printf(1, "-- With threading :)\n");
+  printf(1, "Started successfully\n");
 
-    starttime = uptime();
-    int threaded_out = withthreads(ntasks);
-    duration = uptime() - starttime;
+  int n_workers = 1;
+  int n_tasks = 2;
+  UThreadManager *utm = uthread_create(n_workers, n_tasks);
+  printf(1, "utm.n_run_tasks: %d\n", utm->n_run_tasks);
 
-    printf(1, "result = %d in %d time units\r\n", threaded_out, duration);
-  }
+  uthread_add_task(utm, test, (void*) 0);
+  uthread_add_task(utm, test, (void*) 1);
 
-  {
-    printf(1, "-- With concurrency on 1 CPU :)\n");
+  uthread_join(utm);
 
-    starttime = uptime();
-    int threaded_out = withconcurency(ntasks);
-    duration = uptime() - starttime;
-
-    printf(1, "result = %d in %d time units\r\n", threaded_out, duration);
-  }
-
-  {
-    printf(1, "-- With multiprocessing :)\n");
-
-    starttime = uptime();
-    int multi_out = withprocesses(ntasks);
-    duration = uptime() - starttime;
-
-    printf(1, "result = %d in %d time units\r\n", multi_out, duration);
-  }
-
-  {
-    printf(1, "-- Sequential :(\n");
-
-    starttime = uptime();
-    int seq_out = sequential(ntasks);
-    duration = uptime() - starttime;
-
-    printf(1, "result = %d in %d time units\r\n", seq_out, duration);
-  }
+  printf(1, "utm.n_run_tasks: %d\n", utm->n_run_tasks);
+  printf(1, "Finished successfully\n");
 
   exit();
 }
