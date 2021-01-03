@@ -28,6 +28,10 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int sem_init(int, int); // semaphore syscalls 
+int sem_destroy(int);
+int sem_wait(int, int);
+int sem_signal(int, int);
 int clone(void*, void*, void*);
 int join(int);
 int sched_setaffinity(void*);
