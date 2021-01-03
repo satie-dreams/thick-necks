@@ -4,7 +4,6 @@
 #include "param.h"
 #include "spinlock.h"
 
-#define NSEMS 32
 #define ACTIVE 1
 
 
